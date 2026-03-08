@@ -26,6 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/search?q=" className="text-gray-600 hover:text-water-600 transition-colors">
                 Search
               </Link>
+              <Link href="/map" className="text-gray-600 hover:text-water-600 transition-colors">
+                Map
+              </Link>
               <Link href="/worst" className="text-gray-600 hover:text-water-600 transition-colors">
                 Worst Water
               </Link>

@@ -132,6 +132,10 @@ export function getContaminantsForSystem(systemId: string): ContaminantSample[] 
   return loadJSON<ContaminantSample>('contaminants.json').filter(c => c.system_id === systemId);
 }
 
+export function getAllScores(): WaterScore[] {
+  return getScores();
+}
+
 export function getTotalStats() {
   const scores = getScores();
   return {
