@@ -1,5 +1,5 @@
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import WaterMap from '@/components/WaterMap';
 import { getAllScores } from '@/lib/data';
 import type { Metadata } from 'next';
 
@@ -7,9 +7,6 @@ export const metadata: Metadata = {
   title: 'US Water Quality Map — WaterScore',
   description: 'Interactive map of water quality across all 50 US states. See which states have the best and worst drinking water.',
 };
-
-// Dynamic import — Leaflet needs browser
-const WaterMap = dynamic(() => import('@/components/WaterMap'), { ssr: false });
 
 function getGrade(score: number): string {
   if (score >= 90) return 'A';
