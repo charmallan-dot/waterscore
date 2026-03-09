@@ -1,13 +1,15 @@
+export const dynamic = 'force-dynamic';
+
 import SearchBar from '@/components/SearchBar';
 import ScoreGauge from '@/components/ScoreGauge';
 import GradeBar from '@/components/GradeBar';
 import Link from 'next/link';
 import { getTotalStats, getWorstSystems, getBestSystems } from '@/lib/data';
 
-export default function HomePage() {
-  const stats = getTotalStats();
-  const worst = getWorstSystems(5);
-  const best = getBestSystems(5);
+export default async function HomePage() {
+  const stats = await getTotalStats();
+  const worst = await getWorstSystems(5);
+  const best = await getBestSystems(5);
 
   return (
     <div>

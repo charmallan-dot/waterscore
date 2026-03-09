@@ -11,21 +11,21 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const score = getScoreBySystemId(id);
+  const score = await getScoreBySystemId(id);
   if (!score) return { title: 'System Not Found — WaterScore' };
   return {
     title: `Water Quality: ${score.system_name}, ${score.state} — Grade ${score.grade} | WaterScore`,
-    description: `${score.system_name} in ${score.city}, ${score.state} scored ${score.overall_score}/100 (${score.grade}). ${score.top_concerns[0] || 'Check contaminants, violations, and lead risk.'}`,
+    description: `${score.system_name} in ${score.city}, ${score.state} scored ${score.overall_score}/100 (${score.grade}).`,
   };
 }
 
 export default async function SystemPage({ params }: PageProps) {
   const { id } = await params;
-  const score = getScoreBySystemId(id);
+  const score = await getScoreBySystemId(id);
   if (!score) notFound();
 
-  const violations = getViolationsForSystem(id);
-  const contaminants = getContaminantsForSystem(id);
+  const violations = await getViolationsForSystem(id);
+  const contaminants = await getContaminantsForSystem(id);
 
   const recentViolations = violations
     .sort((a, b) => new Date(b.begin_date).getTime() - new Date(a.begin_date).getTime())
@@ -35,7 +35,6 @@ export default async function SystemPage({ params }: PageProps) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* Breadcrumb */}
       <nav className="text-sm text-gray-500 mb-6">
         <Link href="/" className="hover:text-water-600">Home</Link>
         <span className="mx-2">›</span>
@@ -44,19 +43,16 @@ export default async function SystemPage({ params }: PageProps) {
         <span className="text-gray-900">{score.system_name}</span>
       </nav>
 
-      {/* Hero */}
       <div className="flex flex-col md:flex-row items-start gap-8 mb-8">
         <ScoreGauge score={score.overall_score} grade={score.grade} size="lg" />
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900">{score.system_name}</h1>
           <p className="text-lg text-gray-600 mt-1">{score.city}, {score.state}</p>
           <p className="text-sm text-gray-400 mt-1">
-            Serves {score.population_served.toLocaleString()} people • 
+            Serves {score.population_served?.toLocaleString() || 'N/A'} people • 
             Last updated {new Date(score.updated_at).toLocaleDateString()}
           </p>
-
-          {/* Concerns */}
-          {score.top_concerns.length > 0 && (
+          {score.top_concerns?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               {score.top_concerns.map((c, i) => (
                 <ConcernBadge key={i} concern={c} />
@@ -66,7 +62,6 @@ export default async function SystemPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Score Breakdown */}
       <section className="bg-gray-50 rounded-xl p-6 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Score Breakdown</h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -88,7 +83,6 @@ export default async function SystemPage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* Contaminant Exceedances */}
       {exceedances.length > 0 && (
         <section className="mb-8">
           <h2 className="text-xl font-bold text-red-700 mb-4">
@@ -119,7 +113,6 @@ export default async function SystemPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* Recent Violations */}
       {recentViolations.length > 0 && (
         <section className="mb-8">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -140,7 +133,7 @@ export default async function SystemPage({ params }: PageProps) {
                   </span>
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {new Date(v.begin_date).toLocaleDateString()} 
+                  {new Date(v.begin_date).toLocaleDateString()}
                   {v.end_date && ` — ${new Date(v.end_date).toLocaleDateString()}`}
                 </div>
               </div>
@@ -149,22 +142,15 @@ export default async function SystemPage({ params }: PageProps) {
         </section>
       )}
 
-      {/* What You Can Do */}
       <section className="bg-water-50 rounded-xl p-6">
         <h2 className="text-xl font-bold text-water-800 mb-4">💡 What You Can Do</h2>
         <div className="space-y-3 text-sm text-gray-700">
           {score.grade === 'A' || score.grade === 'B' ? (
-            <p>Your water system has a good score! For extra peace of mind, a basic carbon filter (like Brita) can further improve taste and remove trace contaminants.</p>
+            <p>Your water system has a good score! For extra peace of mind, a basic carbon filter can further improve taste and remove trace contaminants.</p>
           ) : (
             <>
-              {exceedances.some(e => e.contaminant_code === 'PB90') && (
-                <p>🔴 <strong>Lead detected above EPA limits.</strong> Use a reverse osmosis (RO) filter or a certified lead-removing pitcher. Never use hot tap water for cooking or drinking.</p>
-              )}
-              {exceedances.some(e => e.contaminant_code === 'CU90') && (
-                <p>🟠 <strong>Copper above EPA limits.</strong> Run your tap for 30 seconds before drinking. A reverse osmosis system can remove copper.</p>
-              )}
               {score.unresolved_violations > 0 && (
-                <p>⚠️ <strong>{score.unresolved_violations} unresolved violation(s).</strong> Contact your water utility ({score.system_name}) to ask about their remediation plan.</p>
+                <p>⚠️ <strong>{score.unresolved_violations} unresolved violation(s).</strong> Contact your water utility to ask about their remediation plan.</p>
               )}
               <p>For comprehensive protection, we recommend a <strong>reverse osmosis system</strong> which removes 99%+ of contaminants including lead, PFAS, and nitrates.</p>
             </>

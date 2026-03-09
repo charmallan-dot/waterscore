@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow reading data files at build time
+  // All data pages are dynamic (fetch from Supabase at request time)
   experimental: {
     serverComponentsExternalPackages: ['fs'],
   },
