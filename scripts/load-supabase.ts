@@ -35,7 +35,19 @@ async function batchInsert(table: string, rows: any[], batchSize = 500) {
   console.log(`✅ ${table}: ${ok} loaded, ${fail} batch errors`);
 }
 
+async function clearTable(table: string) {
+  console.log(`🗑️  Clearing ${table}...`);
+  const { error } = await supabase.from(table).delete().neq('system_id', '___none___');
+  if (error) console.error(`   ⚠️ Clear ${table}: ${error.message}`);
+  else console.log(`   ✅ ${table} cleared`);
+}
+
 async function main() {
+  // Clear old data first
+  await clearTable('contaminants');
+  await clearTable('violations');
+  await clearTable('water_scores');
+
   // Water scores — map to schema
   const scores = loadJSON('water_scores.json').map((s: any) => ({
     system_id: s.system_id,

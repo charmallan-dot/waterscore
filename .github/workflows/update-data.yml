@@ -1,0 +1,50 @@
+name: Update Water Quality Data
+
+on:
+  schedule:
+    # Run on the 1st and 15th of each month at 3am UTC
+    - cron: '0 3 1,15 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # Fetch all 50 states water systems + violations
+      - name: Fetch SDWIS data
+        run: npx tsx scripts/fetch-sdwis.ts --all
+
+      # Fetch lead & copper contaminant samples
+      - name: Fetch contaminant data
+        run: npx tsx scripts/fetch-contaminants.ts --all
+
+      # Compute scores for all systems
+      - name: Compute scores
+        run: npx tsx scripts/compute-scores.ts
+
+      # Upload to Supabase
+      - name: Upload to Supabase
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: npx tsx scripts/load-supabase.ts
+
+      # Log results
+      - name: Summary
+        run: |
+          echo "### ✅ Data Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- Water systems: $(cat data/processed/water_scores.json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')" >> $GITHUB_STEP_SUMMARY
+          echo "- Violations: $(cat data/processed/violations.json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')" >> $GITHUB_STEP_SUMMARY
+          echo "- Contaminants: $(cat data/processed/contaminants.json | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')" >> $GITHUB_STEP_SUMMARY
+          echo "- Updated: $(date -u)" >> $GITHUB_STEP_SUMMARY
